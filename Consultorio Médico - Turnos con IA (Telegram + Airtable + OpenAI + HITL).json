@@ -1,0 +1,2432 @@
+{
+  "name": "Consultorio Médico - Turnos con IA (Telegram + Airtable + OpenAI + HITL)",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message",
+          "callback_query"
+        ],
+        "additionalFields": {}
+      },
+      "id": "7eb51397-f4f1-47f5-8e1c-ab766562b76a",
+      "name": "Telegram Trigger - Mensajes y Botones",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -896,
+        96
+      ],
+      "webhookId": "93d8d594-7f11-4e29-bd83-9168adb4fe9b",
+      "credentials": {
+        "telegramApi": {
+          "id": "WnTb99hLwuVKSVTZ",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "deeb887a-da00-43f8-895f-89b33fabfe43",
+              "leftValue": "={{ !($json.message?.from?.is_bot || $json.callback_query?.from?.is_bot) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d6b83d48-9404-452b-a6e9-a06a80c5bc04",
+      "name": "Filtro Anti-Bucle (ignorar bots)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -672,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a0",
+              "name": "form_url",
+              "value": "https://gonzalosoto33.app.n8n.cloud/form/a1e5d94b-501f-422a-857b-df150a5ca041",
+              "type": "string"
+            },
+            {
+              "id": "a1",
+              "name": "consultorio",
+              "value": "Consultorio Médico Integral",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "19874e0b-c496-4b02-938b-08cf578633df",
+      "name": "Config - Bot",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -448,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "1bd5e114-6450-4ac5-9158-76bd98bc541c",
+              "leftValue": "={{ $json.callback_query ? 'callback' : 'mensaje' }}",
+              "rightValue": "callback",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "2bee0d9f-9fb8-4ef0-93f4-617f5d47eee4",
+      "name": "¿Eligió Especialidad?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -224,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a0",
+              "name": "chat_id",
+              "value": "={{ $json.callback_query.message.chat.id }}",
+              "type": "string"
+            },
+            {
+              "id": "a1",
+              "name": "especialidad",
+              "value": "={{ ({esp_clinica_medica:'Clínica Médica', esp_pediatria:'Pediatría', esp_odontologia:'Odontología'})[$json.callback_query.data] || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "61b71b62-789d-494c-ab0e-4aa7049d76b1",
+      "name": "Extraer Especialidad y Chat",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "=✅ Elegiste <b>{{ $json.especialidad }}</b>.\n\nCompletá el formulario para elegir día, horario y cargar tus datos:\n<a href=\"{{ $json.form_url }}?Especialidad={{ encodeURIComponent($json.especialidad) }}&amp;chat_id={{ $json.chat_id }}\">📝 Abrir formulario de turno</a>",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "bd0d690c-7f77-4bba-a830-2e30dc1d51c2",
+      "name": "Telegram: Enviar Link del Formulario",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        224,
+        0
+      ],
+      "webhookId": "32936a5b-6c9a-44da-9810-8f2050f36961",
+      "credentials": {
+        "telegramApi": {
+          "id": "WnTb99hLwuVKSVTZ",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.message.chat.id }}",
+        "text": "=👋 ¡Hola! Bienvenido/a a *{{ $json.consultorio }}*.\n¿Para qué especialidad querés pedir turno?",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🩺 Clínica Médica",
+                    "additionalFields": {
+                      "callback_data": "esp_clinica_medica"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "👶 Pediatría",
+                    "additionalFields": {
+                      "callback_data": "esp_pediatria"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "🦷 Odontología",
+                    "additionalFields": {
+                      "callback_data": "esp_odontologia"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "78745bf5-8624-42ab-8048-8d33db23124a",
+      "name": "Telegram: Menú de Especialidades",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        192
+      ],
+      "webhookId": "c3f741fd-02a3-4ba9-9b7b-6251ac5851b6",
+      "credentials": {
+        "telegramApi": {
+          "id": "WnTb99hLwuVKSVTZ",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "formTitle": "Solicitud de Turno",
+        "formDescription": "Completá tus datos para reservar tu turno.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Nombre Completo",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "DNI",
+              "placeholder": "Solo números, sin puntos",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Email",
+              "fieldType": "email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Celular",
+              "placeholder": "+5491122334455",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Fecha de nacimiento",
+              "fieldType": "date",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Domicilio",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Especialidad",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Clínica Médica"
+                  },
+                  {
+                    "option": "Pediatría"
+                  },
+                  {
+                    "option": "Odontología"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Fecha del turno",
+              "fieldType": "date",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Horario",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "09:00"
+                  },
+                  {
+                    "option": "09:30"
+                  },
+                  {
+                    "option": "10:00"
+                  },
+                  {
+                    "option": "10:30"
+                  },
+                  {
+                    "option": "11:00"
+                  },
+                  {
+                    "option": "11:30"
+                  },
+                  {
+                    "option": "12:00"
+                  },
+                  {
+                    "option": "14:00"
+                  },
+                  {
+                    "option": "14:30"
+                  },
+                  {
+                    "option": "15:00"
+                  },
+                  {
+                    "option": "15:30"
+                  },
+                  {
+                    "option": "16:00"
+                  },
+                  {
+                    "option": "16:30"
+                  },
+                  {
+                    "option": "17:00"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Motivo de consulta",
+              "fieldType": "textarea"
+            },
+            {
+              "fieldName": "chat_id",
+              "fieldType": "hiddenField"
+            }
+          ]
+        },
+        "options": {
+          "respondWithOptions": {
+            "values": {
+              "formSubmittedText": "¡Gracias! Te avisamos por Telegram cuando el médico confirme tu turno."
+            }
+          }
+        }
+      },
+      "id": "6c8b2077-9214-4e01-9384-5c934802ec9d",
+      "name": "Form Trigger - Solicitud de Turno",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        -896,
+        704
+      ],
+      "webhookId": "a1e5d94b-501f-422a-857b-df150a5ca041"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a0",
+              "name": "medico_email",
+              "value": "gonzaloemanuelsoto@gmail.com",
+              "type": "string"
+            },
+            {
+              "id": "a1",
+              "name": "calendar_id",
+              "value": "gonzaloemanuelsoto@gmail.com",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "airtable_base_id",
+              "value": "appbn42w9qKUO7mks",
+              "type": "string"
+            },
+            {
+              "id": "a3",
+              "name": "tbl_pacientes",
+              "value": "Pacientes",
+              "type": "string"
+            },
+            {
+              "id": "a4",
+              "name": "tbl_turnos",
+              "value": "Turnos",
+              "type": "string"
+            },
+            {
+              "id": "a5",
+              "name": "tbl_errores",
+              "value": "Errores",
+              "type": "string"
+            },
+            {
+              "id": "a6",
+              "name": "openai_model",
+              "value": "gpt-4o-mini",
+              "type": "string"
+            },
+            {
+              "id": "a7",
+              "name": "max_tokens",
+              "value": 300,
+              "type": "number"
+            },
+            {
+              "id": "a8",
+              "name": "duracion_min",
+              "value": 30,
+              "type": "number"
+            },
+            {
+              "id": "a9",
+              "name": "zona_horaria",
+              "value": "-03:00",
+              "type": "string"
+            },
+            {
+              "id": "a10",
+              "name": "chat_id_prueba",
+              "value": "8180166636",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "5f4ed34f-79fd-4701-85d2-518d83728182",
+      "name": "Config - Turnos",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -672,
+        704
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const f = $input.first().json;\nconst cfg = $('Config - Turnos').first().json;\nconst t = v => (v ?? '').toString().trim();\nconst errores = [];\n\nconst nombreCompletoInput = t(f['Nombre Completo'] || f['Nombre completo']).replace(/\\s+/g, ' ');\nconst partesNombre = nombreCompletoInput.split(' ').filter(Boolean);\nconst apellido = partesNombre.length > 1 ? partesNombre[partesNombre.length - 1] : '';\nconst nombre = partesNombre.length > 1 ? partesNombre.slice(0, -1).join(' ') : (partesNombre[0] || '');\nconst dni = t(f['DNI']).replace(/\\D/g, '');\nconst email = t(f['Email']).toLowerCase();\nlet celular = t(f['Celular']).replace(/[\\s\\-()]/g, '');\nif (celular && !celular.startsWith('+')) celular = '+54' + celular.replace(/^0+/, '');\nconst nacimiento = t(f['Fecha de nacimiento']);\nconst domicilio = t(f['Domicilio']);\nconst fecha = t(f['Fecha del turno']);\nconst hora = t(f['Horario']);\nconst motivo = t(f['Motivo de consulta']) || 'Sin motivo indicado';\nconst especialidad = t(f['Especialidad'] || f.especialidad);\nconst chat_id = t(f.chat_id) || t(cfg.chat_id_prueba).replace('PEGA_AQUI_TU_CHAT_ID','');\n\nif (!nombreCompletoInput) errores.push('Falta el nombre completo');\nelse if (partesNombre.length < 2) errores.push('Ingresá nombre y apellido');\nif (!/^\\d{7,8}$/.test(dni)) errores.push('DNI inválido (7 u 8 números)');\nif (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) errores.push('Email inválido');\nif (!/^\\+\\d{10,15}$/.test(celular)) errores.push('Celular inválido (formato internacional +54...)');\nif (!domicilio) errores.push('Falta el domicilio');\nif (!['Clínica Médica', 'Pediatría', 'Odontología'].includes(especialidad)) errores.push('Elegí una especialidad');\nif (!chat_id) errores.push('Falta el chat de Telegram (abrí el formulario desde el bot o cargá chat_id_prueba en Config - Turnos)');\n\nlet edad = null;\nconst nac = new Date(nacimiento + 'T12:00:00Z');\nif (isNaN(nac)) { errores.push('Fecha de nacimiento inválida'); }\nelse {\n  const hoy = new Date();\n  edad = hoy.getUTCFullYear() - nac.getUTCFullYear();\n  const m = hoy.getUTCMonth() - nac.getUTCMonth();\n  if (m < 0 || (m === 0 && hoy.getUTCDate() < nac.getUTCDate())) edad--;\n  if (edad < 0 || edad > 120) errores.push('Fecha de nacimiento fuera de rango');\n}\n\nlet inicio = null, fin = null;\nconst ini = new Date(`${fecha}T${hora}:00${cfg.zona_horaria}`);\nif (isNaN(ini)) { errores.push('Fecha u horario del turno inválidos'); }\nelse {\n  if (ini.getTime() <= Date.now()) errores.push('El turno debe ser a futuro');\n  const dow = new Date(`${fecha}T12:00:00${cfg.zona_horaria}`).getUTCDay();\n  if (dow === 0 || dow === 6) errores.push('El consultorio atiende de lunes a viernes');\n  inicio = ini.toISOString();\n  fin = new Date(ini.getTime() + cfg.duracion_min * 60000).toISOString();\n}\n\nreturn [{ json: {\n  valido: errores.length === 0,\n  errores: errores.join(' | '),\n  nombre, apellido, nombre_completo: nombreCompletoInput,\n  dni, email, celular, nacimiento, edad, domicilio,\n  especialidad, fecha, hora, motivo, chat_id, inicio, fin\n} }];"
+      },
+      "id": "caba2dc6-69f7-4e8e-bd09-7722c4208261",
+      "name": "Validar y Normalizar Datos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -448,
+        704
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "760c8ce4-4061-4af9-ba40-68973e51cdd3",
+              "leftValue": "={{ $json.valido }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "5ab3e993-5f80-44bd-a9e4-ec293d2c44db",
+      "name": "¿Datos Válidos?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -224,
+        704
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "={{ $('Config - Turnos').first().json.airtable_base_id }}",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "={{ $('Config - Turnos').first().json.tbl_errores }}",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "value": {
+            "Origen": "Validación de formulario",
+            "Detalle": "={{ $json.errores }}",
+            "Datos": "={{ JSON.stringify({especialidad: $json.especialidad, fecha: $json.fecha, hora: $json.hora}) }}"
+          },
+          "schema": [
+            {
+              "id": "Origen",
+              "displayName": "Origen",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Detalle",
+              "displayName": "Detalle",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Datos",
+              "displayName": "Datos",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "02bbcd6b-7be0-43a4-8f08-fb511522e3d1",
+      "name": "Airtable: Registrar Error de Validación",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        800
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "PEnnCrphsUr0q5mo",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Validar y Normalizar Datos').first().json.chat_id }}",
+        "text": "=⚠️ No pudimos registrar tu turno:\n{{ $('Validar y Normalizar Datos').first().json.errores }}\n\nVolvé a abrir el formulario desde el bot e intentalo de nuevo.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "81ef6119-111b-4b64-960c-82dad0556bb6",
+      "name": "Telegram: Avisar Datos Inválidos",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        224,
+        800
+      ],
+      "webhookId": "3297de5b-0687-4368-98f9-b288cd77b3ba",
+      "credentials": {
+        "telegramApi": {
+          "id": "WnTb99hLwuVKSVTZ",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "={{ $('Config - Turnos').first().json.calendar_id }}",
+          "mode": "id",
+          "__regex": "(^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\\.[a-zA-Z0-9-]+)*)"
+        },
+        "returnAll": true,
+        "timeMin": "={{ $('Validar y Normalizar Datos').first().json.inicio }}",
+        "timeMax": "={{ $('Validar y Normalizar Datos').first().json.fin }}",
+        "options": {
+          "recurringEventHandling": "expand"
+        }
+      },
+      "id": "882f3df2-c8bf-4829-a703-60a682f00c8c",
+      "name": "Calendar: Consultar Disponibilidad",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        608
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "TVfo4qNlBAVgasF9",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "fd77795a-d400-4b7b-aadf-422ac4b254a1",
+              "leftValue": "={{ $json.libre }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "4f7d308c-47e1-4f9e-9129-8f1539e8d7bb",
+      "name": "¿Horario Libre?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        608
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Validar y Normalizar Datos').first().json.chat_id }}",
+        "text": "=😕 El horario {{ $('Validar y Normalizar Datos').first().json.hora }} del {{ $('Validar y Normalizar Datos').first().json.fecha }} ya está ocupado por: {{ $json.conflicto }}.\nVolvé a abrir el formulario desde el bot para elegir otro.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "3621c6de-4903-49ae-b0d8-27de209cfc8f",
+      "name": "Telegram: Horario Ocupado",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        672,
+        704
+      ],
+      "webhookId": "0673078a-4cda-403f-b2e0-b78a9a45a11f",
+      "credentials": {
+        "telegramApi": {
+          "id": "WnTb99hLwuVKSVTZ",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "value": "={{ $('Config - Turnos').first().json.airtable_base_id }}",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "={{ $('Config - Turnos').first().json.tbl_pacientes }}",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "DNI"
+          ],
+          "schema": [
+            {
+              "id": "Nombre Completo",
+              "displayName": "Nombre Completo",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "DNI",
+              "displayName": "DNI",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Celular",
+              "displayName": "Celular",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Fecha de nacimiento",
+              "displayName": "Fecha de nacimiento",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Edad",
+              "displayName": "Edad",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Domicilio",
+              "displayName": "Domicilio",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "8be36fad-9078-46a7-bc75-ed3a1a94501b",
+      "name": "Airtable: Upsert Paciente",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        896,
+        512
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "PEnnCrphsUr0q5mo",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "={{ $('Config - Turnos').first().json.airtable_base_id }}",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "={{ $('Config - Turnos').first().json.tbl_turnos }}",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Turno",
+              "displayName": "Turno",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Paciente",
+              "displayName": "Paciente",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Especialidad",
+              "displayName": "Especialidad",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Fecha",
+              "displayName": "Fecha",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Horario",
+              "displayName": "Horario",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Motivo",
+              "displayName": "Motivo",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Resumen IA",
+              "displayName": "Resumen IA",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Prioridad IA",
+              "displayName": "Prioridad IA",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Alerta IA",
+              "displayName": "Alerta IA",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Estado",
+              "displayName": "Estado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Chat ID",
+              "displayName": "Chat ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "71d34a5f-1fc3-4cd6-b96e-3029c14fb856",
+      "name": "Airtable: Crear Turno",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        1344,
+        512
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "PEnnCrphsUr0q5mo",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ (() => { const d = $('Validar y Normalizar Datos').first().json; const c = $('Config - Turnos').first().json; return JSON.stringify({ model: c.openai_model, max_completion_tokens: c.max_tokens, response_format: { type: 'json_object' }, messages: [ { role: 'system', content: \"Sos asistente administrativo de un consultorio médico en Argentina. Analizás solicitudes de turnos. Respondé SOLO con un JSON válido con las claves: resumen (máx 40 palabras), prioridad (Alta, Media o Baja según la urgencia que sugiere el motivo), alerta (texto breve si hay incoherencias, por ejemplo edad no acorde a la especialidad; vacío si no hay). Reglas: Pediatría es solo para menores de 18 años. Nunca des diagnósticos ni consejos médicos.\" }, { role: 'user', content: ['Especialidad: ' + d.especialidad, 'Edad del paciente: ' + d.edad + ' años', 'Fecha y hora: ' + d.fecha + ' ' + d.hora, 'Motivo de consulta: ' + d.motivo].join('\\n') } ] }); })() }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "849bcf52-774d-4847-b3a9-eb0099102b09",
+      "name": "OpenAI: Analizar Solicitud",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1568,
+        512
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "openAiApi": {
+          "id": "SQIEpaQYQ0daQScD",
+          "name": "OpenAI account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "={{ $('Config - Turnos').first().json.airtable_base_id }}",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "={{ $('Config - Turnos').first().json.tbl_errores }}",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Origen",
+              "displayName": "Origen",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Detalle",
+              "displayName": "Detalle",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Datos",
+              "displayName": "Datos",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "a3723fab-40ae-42f5-8549-516774a88513",
+      "name": "Airtable: Registrar Error IA",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        2016,
+        592
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "PEnnCrphsUr0q5mo",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const j = $input.first().json;\nlet out = { resumen: 'Resumen no disponible (falló la IA). Revisar manualmente.', prioridad: 'Media', alerta: 'IA no disponible', ia_ok: false };\ntry {\n  const txt = (j.choices?.[0]?.message?.content || '').replace(/```json|```/g, '').trim();\n  if (txt) {\n    const p = JSON.parse(txt);\n    out = {\n      resumen: String(p.resumen || '').slice(0, 500),\n      prioridad: ['Alta', 'Media', 'Baja'].includes(p.prioridad) ? p.prioridad : 'Media',\n      alerta: String(p.alerta || ''),\n      ia_ok: true\n    };\n  }\n} catch (e) { out.alerta = 'Respuesta de IA no interpretable'; }\nreturn [{ json: out }];"
+      },
+      "id": "6c5f965b-2009-422c-8e0f-1bc6cfbc6211",
+      "name": "Parsear Respuesta IA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2240,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "sendTo": "={{ $('Config - Turnos').first().json.medico_email }}",
+        "subject": "=🩺 Aprobar turno: {{ $('Validar y Normalizar Datos').first().json.especialidad }} - {{ $('Validar y Normalizar Datos').first().json.fecha }} {{ $('Validar y Normalizar Datos').first().json.hora }} ({{ $('Validar y Normalizar Datos').first().json.nombre_completo }})",
+        "message": "=Nueva solicitud de turno pendiente de aprobación.\n\nPaciente: {{ $('Validar y Normalizar Datos').first().json.nombre_completo }} (DNI {{ $('Validar y Normalizar Datos').first().json.dni }}, {{ $('Validar y Normalizar Datos').first().json.edad }} años)\nContacto: {{ $('Validar y Normalizar Datos').first().json.email }} / {{ $('Validar y Normalizar Datos').first().json.celular }}\nEspecialidad: {{ $('Validar y Normalizar Datos').first().json.especialidad }}\nFecha y hora: {{ $('Validar y Normalizar Datos').first().json.fecha }} {{ $('Validar y Normalizar Datos').first().json.hora }}\nMotivo: {{ $('Validar y Normalizar Datos').first().json.motivo }}\n\nResumen IA: {{ $('Parsear Respuesta IA').first().json.resumen }}\nPrioridad IA: {{ $('Parsear Respuesta IA').first().json.prioridad }}\nAlerta: {{ $('Parsear Respuesta IA').first().json.alerta || 'Ninguna' }}",
+        "approvalOptions": {
+          "values": {
+            "approvalType": "double",
+            "approveLabel": "✅ Aprobar turno",
+            "disapproveLabel": "❌ Rechazar"
+          }
+        },
+        "options": {}
+      },
+      "id": "c61cec6f-f8bd-4466-a0dd-b6642c1a9de0",
+      "name": "Gmail: HITL Aprobación del Médico",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2912,
+        512
+      ],
+      "webhookId": "6f281978-2ede-4682-b27d-4d874610c514",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "MVzam0XBdaSF1fVC",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "4c1d251e-7fb0-42fa-ab89-908615b0fcb8",
+              "leftValue": "={{ $('Gmail: HITL Aprobación del Médico').first().json.data.approved }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c7921ba6-8ce1-4936-b2d1-d517a1134672",
+      "name": "¿Aprobado por el Médico?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3136,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "={{ $('Config - Turnos').first().json.calendar_id }}",
+          "mode": "id"
+        },
+        "start": "={{ DateTime.fromISO($('Validar y Normalizar Datos').first().json.inicio).setZone('America/Argentina/Buenos_Aires').toISO() }}",
+        "end": "={{ DateTime.fromISO($('Validar y Normalizar Datos').first().json.fin).setZone('America/Argentina/Buenos_Aires').toISO() }}",
+        "additionalFields": {
+          "description": "=DNI: {{ $('Validar y Normalizar Datos').first().json.dni }}\nCelular: {{ $('Validar y Normalizar Datos').first().json.celular }}\nEmail: {{ $('Validar y Normalizar Datos').first().json.email }}\nMotivo: {{ $('Validar y Normalizar Datos').first().json.motivo }}\nResumen IA: {{ $('Parsear Respuesta IA').first().json.resumen }}",
+          "summary": "=🩺 {{ $('Validar y Normalizar Datos').first().json.especialidad }} - {{ $('Validar y Normalizar Datos').first().json.nombre_completo }}"
+        }
+      },
+      "id": "4a8d8209-fb27-4fde-b7c0-e2c4f1acf2c4",
+      "name": "Calendar: Crear Turno",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        3360,
+        416
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "TVfo4qNlBAVgasF9",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "={{ $('Config - Turnos').first().json.airtable_base_id }}",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "={{ $('Config - Turnos').first().json.tbl_turnos }}",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Estado",
+              "displayName": "Estado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Calendar Event ID",
+              "displayName": "Calendar Event ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Calendar Link",
+              "displayName": "Calendar Link",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "2763e80c-3bf4-4557-ba38-da3c865924bd",
+      "name": "Airtable: Marcar Aprobado por Humano",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        3808,
+        416
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "PEnnCrphsUr0q5mo",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Validar y Normalizar Datos').first().json.chat_id }}",
+        "text": "=✅ ¡Turno confirmado!\n\n📌 {{ $('Validar y Normalizar Datos').first().json.especialidad }}\n📅 {{ $('Validar y Normalizar Datos').first().json.fecha }} a las {{ $('Validar y Normalizar Datos').first().json.hora }}\n\nTe esperamos, {{ $('Validar y Normalizar Datos').first().json.nombre }}.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "61e7417c-73b7-42ae-9ade-45e76dd95573",
+      "name": "Telegram: Confirmar Turno al Paciente",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        4032,
+        416
+      ],
+      "webhookId": "0c18ae90-c7df-4ed9-aa11-07f321648dea",
+      "credentials": {
+        "telegramApi": {
+          "id": "WnTb99hLwuVKSVTZ",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Validar y Normalizar Datos').first().json.email }}",
+        "subject": "=Turno confirmado - {{ $('Validar y Normalizar Datos').first().json.especialidad }} - {{ $('Validar y Normalizar Datos').first().json.fecha }} {{ $('Validar y Normalizar Datos').first().json.hora }}",
+        "message": "=Hola {{ $('Validar y Normalizar Datos').first().json.nombre }},\n\nTu turno de {{ $('Validar y Normalizar Datos').first().json.especialidad }} quedó confirmado para el {{ $('Validar y Normalizar Datos').first().json.fecha }} a las {{ $('Validar y Normalizar Datos').first().json.hora }}.\n\nSaludos.",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "2c561bb2-5cfa-4104-a9e4-cdb6147b4f48",
+      "name": "Gmail: Confirmar Turno al Paciente",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        4256,
+        416
+      ],
+      "webhookId": "d8997c07-6428-4c36-bf9c-90f717488c87",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "MVzam0XBdaSF1fVC",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Validar y Normalizar Datos').first().json.chat_id }}",
+        "text": "=😕 Lamentablemente no pudimos confirmar tu turno del {{ $('Validar y Normalizar Datos').first().json.fecha }} a las {{ $('Validar y Normalizar Datos').first().json.hora }}.\nEscribime de nuevo para elegir otro horario.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "8b83c8db-17c1-4389-9baa-c337ee745079",
+      "name": "Telegram: Turno Rechazado al Paciente",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3808,
+        608
+      ],
+      "webhookId": "6aaa6408-3a90-47d4-8be3-82a83a269db7",
+      "credentials": {
+        "telegramApi": {
+          "id": "WnTb99hLwuVKSVTZ",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "c4b01e09-350b-4ea7-8a4f-5620aac09af7",
+      "name": "Error Trigger - Fallos del Flujo",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        -896,
+        1024
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appbn42w9qKUO7mks",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "Errores",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Origen",
+              "displayName": "Origen",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Detalle",
+              "displayName": "Detalle",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Datos",
+              "displayName": "Datos",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "dec6a26e-8234-4360-aa08-5ce4409589b3",
+      "name": "Airtable: Log de Error Global",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        -448,
+        1024
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "PEnnCrphsUr0q5mo",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "aede616a-6cff-4849-9b5c-5aab5d96d638",
+              "name": "Nombre Completo",
+              "value": "={{ $('Validar y Normalizar Datos').first().json.nombre_completo }}",
+              "type": "string"
+            },
+            {
+              "id": "8ccd93a1-2115-4277-857d-0b807c7b9ffb",
+              "name": "DNI",
+              "value": "={{ $('Validar y Normalizar Datos').first().json.dni }}",
+              "type": "string"
+            },
+            {
+              "id": "3f91927f-91ed-43b9-8c3a-2b8e0e6aa610",
+              "name": "Email",
+              "value": "={{ $('Validar y Normalizar Datos').first().json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "9545ddf6-4b2a-4790-b817-2119465670d7",
+              "name": "Celular",
+              "value": "={{ $('Validar y Normalizar Datos').first().json.celular }}",
+              "type": "string"
+            },
+            {
+              "id": "0bddca88-2d83-4d49-ad0d-4f59e2408ef0",
+              "name": "Fecha de nacimiento",
+              "value": "={{ $('Validar y Normalizar Datos').first().json.nacimiento }}",
+              "type": "string"
+            },
+            {
+              "id": "a79c24e9-2f88-4ddf-8921-3fd5115f7550",
+              "name": "Edad",
+              "value": "={{ $('Validar y Normalizar Datos').first().json.edad }}",
+              "type": "number"
+            },
+            {
+              "id": "2b3016d3-c490-42a4-b974-12f3c5c279f0",
+              "name": "Domicilio",
+              "value": "={{ $('Validar y Normalizar Datos').first().json.domicilio }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b321c736-507f-4d9d-91b8-061b50dafa91",
+      "name": "Preparar Datos Paciente",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        672,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d36e8574-681a-4373-b734-ff700e32dbfa",
+              "name": "Turno",
+              "value": "={{ $('Validar y Normalizar Datos').first().json.especialidad + ' - ' + $('Validar y Normalizar Datos').first().json.fecha + ' ' + $('Validar y Normalizar Datos').first().json.hora + ' - ' + $('Validar y Normalizar Datos').first().json.nombre_completo }}",
+              "type": "string"
+            },
+            {
+              "id": "55efe480-7826-4fa7-8286-4f51ec2b3e67",
+              "name": "Paciente",
+              "value": "={{ [$json.id] }}",
+              "type": "array"
+            },
+            {
+              "id": "db7c45ec-9c08-4122-a5b5-0d89f8c4afef",
+              "name": "Especialidad",
+              "value": "={{ $('Validar y Normalizar Datos').first().json.especialidad }}",
+              "type": "string"
+            },
+            {
+              "id": "209d7bcd-89ba-4d3e-91de-c4b61eb0f0a9",
+              "name": "Fecha",
+              "value": "={{ $('Validar y Normalizar Datos').first().json.fecha }}",
+              "type": "string"
+            },
+            {
+              "id": "ab9a25f7-cfb0-4e67-8f34-d8f7af52bb95",
+              "name": "Horario",
+              "value": "={{ $('Validar y Normalizar Datos').first().json.hora }}",
+              "type": "string"
+            },
+            {
+              "id": "0fe749e6-815b-4112-b8d2-cb19f5c08ab7",
+              "name": "Motivo",
+              "value": "={{ $('Validar y Normalizar Datos').first().json.motivo }}",
+              "type": "string"
+            },
+            {
+              "id": "f535f35d-bdf7-4058-80dd-e7110bc89569",
+              "name": "Estado",
+              "value": "Pendiente",
+              "type": "string"
+            },
+            {
+              "id": "ba1ace67-7f90-418d-92de-4e843772ceed",
+              "name": "Chat ID",
+              "value": "={{ $('Validar y Normalizar Datos').first().json.chat_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "78e0fdef-7828-4a67-b98e-59f0404e6262",
+      "name": "Preparar Datos Turno",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1120,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b13a9725-bdcb-424f-ba0e-ac083972ae0c",
+              "name": "id",
+              "value": "={{ $('Airtable: Crear Turno').first().json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "888a44d6-e7df-48d6-8908-e6b4ae154806",
+              "name": "Estado",
+              "value": "Aprobado por Humano",
+              "type": "string"
+            },
+            {
+              "id": "06b8676b-d6a0-4c64-8b5c-578b4ebc291d",
+              "name": "Calendar Event ID",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "db9a494f-268b-47d9-bed1-a80961e5377c",
+              "name": "Calendar Link",
+              "value": "={{ $json.htmlLink }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d3018152-490b-4d7b-99ed-c8f39d2d55a2",
+      "name": "Preparar Aprobación",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3584,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a0",
+              "name": "Origen",
+              "value": "API de IA (OpenAI)",
+              "type": "string"
+            },
+            {
+              "id": "a1",
+              "name": "Detalle",
+              "value": "={{ JSON.stringify($json.error ?? $json) }}",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "Datos",
+              "value": "={{ JSON.stringify({dni: $('Validar y Normalizar Datos').first().json.dni, especialidad: $('Validar y Normalizar Datos').first().json.especialidad}) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "8821e262-14e2-4c2e-9d1c-3183f799ac19",
+      "name": "Preparar Error IA",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1792,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a0",
+              "name": "Origen",
+              "value": "={{ $json.workflow.name + ' > ' + ($json.execution.lastNodeExecuted ?? 'desconocido') }}",
+              "type": "string"
+            },
+            {
+              "id": "a1",
+              "name": "Detalle",
+              "value": "={{ $json.execution.error.message }}",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "Datos",
+              "value": "={{ $json.execution.url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "16519094-8f8d-443d-aa5a-d28987a604a2",
+      "name": "Preparar Error Global",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -672,
+        1024
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const v = $('Validar y Normalizar Datos').first().json;\nconst ini = new Date(v.inicio);\nconst fin = new Date(v.fin);\nconst eventos = $input.all().map(i => i.json).filter(e =>\n  e.id && e.status !== 'cancelled' && e.transparency !== 'transparent' && (!e.eventType || e.eventType === 'default'));\nconst choque = eventos.find(e => {\n  const s = new Date(e.start?.dateTime || e.start?.date);\n  const en = new Date(e.end?.dateTime || e.end?.date);\n  return en > ini && s < fin;\n});\nconst desc = choque\n  ? `${choque.summary || 'evento sin título'} (${choque.start?.dateTime || choque.start?.date} → ${choque.end?.dateTime || choque.end?.date})`\n  : '';\nreturn [{ json: { libre: !choque, conflicto: desc, consultado: `${v.inicio} → ${v.fin}`, eventos_encontrados: eventos.length } }];"
+      },
+      "id": "53bbebde-fdfc-494b-80d0-5ccda0a9b526",
+      "name": "Evaluar Disponibilidad",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        608
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cf0e3580-0594-4fbe-98d8-86137d712c22",
+              "name": "id",
+              "value": "={{ $('Airtable: Crear Turno').first().json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "7e9c49ad-b7c8-4c4b-855a-7dcaaa9ec08d",
+              "name": "Resumen IA",
+              "value": "={{ $('Parsear Respuesta IA').first().json.resumen }}",
+              "type": "string"
+            },
+            {
+              "id": "71ba9e6c-8fda-4ccf-94fc-c255527c783c",
+              "name": "Prioridad IA",
+              "value": "={{ $('Parsear Respuesta IA').first().json.prioridad }}",
+              "type": "string"
+            },
+            {
+              "id": "8666a7f3-5c3b-4a5b-81e3-aab144ff7f2c",
+              "name": "Alerta IA",
+              "value": "={{ $('Parsear Respuesta IA').first().json.alerta }}",
+              "type": "string"
+            },
+            {
+              "id": "254ce02e-0dba-4fd3-837d-ebe62e8e3113",
+              "name": "Estado",
+              "value": "Procesado por IA",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2464,
+        512
+      ],
+      "id": "ded709b2-0431-42ab-9716-e6809047a287",
+      "name": "Preparar Análisis IA"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "={{ $('Config - Turnos').first().json.airtable_base_id }}",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "={{ $('Config - Turnos').first().json.tbl_turnos }}",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Resumen IA",
+              "displayName": "Resumen IA",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Prioridad IA",
+              "displayName": "Prioridad IA",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Alerta IA",
+              "displayName": "Alerta IA",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Estado",
+              "displayName": "Estado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "479f6535-1d5b-44b8-ab4d-e31caa96c374",
+      "name": "Airtable: Guardar Análisis IA",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        2688,
+        512
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "PEnnCrphsUr0q5mo",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f0d71adf-c2b0-4da8-833e-e86bd1de19dc",
+              "name": "id",
+              "value": "={{ $('Airtable: Crear Turno').first().json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "5bf655cf-911d-48c6-bd4d-ca3124c3fc7f",
+              "name": "Estado",
+              "value": "Rechazado",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3360,
+        608
+      ],
+      "id": "0cbbccd0-98da-452b-800e-adab96719f83",
+      "name": "Preparar Rechazo"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "={{ $('Config - Turnos').first().json.airtable_base_id }}",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "={{ $('Config - Turnos').first().json.tbl_turnos }}",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Estado",
+              "displayName": "Estado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "e6e23320-006c-46e2-85e9-008941a8726e",
+      "name": "Airtable: Marcar Rechazado",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        3584,
+        608
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "PEnnCrphsUr0q5mo",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "={{ $('Config - Turnos').first().json.airtable_base_id }}",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "={{ $('Config - Turnos').first().json.tbl_turnos }}",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Airtable: Crear Turno').first().json.id }}",
+            "Gmail Thread ID": "={{ $json.threadId }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Gmail Thread ID",
+              "displayName": "Gmail Thread ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "8af38ce4-7651-4d7a-a38b-d0df3577c029",
+      "name": "Airtable: Guardar Thread ID Gmail",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        4480,
+        416
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "PEnnCrphsUr0q5mo",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger - Mensajes y Botones": {
+      "main": [
+        [
+          {
+            "node": "Filtro Anti-Bucle (ignorar bots)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtro Anti-Bucle (ignorar bots)": {
+      "main": [
+        [
+          {
+            "node": "Config - Bot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config - Bot": {
+      "main": [
+        [
+          {
+            "node": "¿Eligió Especialidad?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Eligió Especialidad?": {
+      "main": [
+        [
+          {
+            "node": "Extraer Especialidad y Chat",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Telegram: Menú de Especialidades",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Especialidad y Chat": {
+      "main": [
+        [
+          {
+            "node": "Telegram: Enviar Link del Formulario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Form Trigger - Solicitud de Turno": {
+      "main": [
+        [
+          {
+            "node": "Config - Turnos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config - Turnos": {
+      "main": [
+        [
+          {
+            "node": "Validar y Normalizar Datos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar y Normalizar Datos": {
+      "main": [
+        [
+          {
+            "node": "¿Datos Válidos?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Datos Válidos?": {
+      "main": [
+        [
+          {
+            "node": "Calendar: Consultar Disponibilidad",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Airtable: Registrar Error de Validación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable: Registrar Error de Validación": {
+      "main": [
+        [
+          {
+            "node": "Telegram: Avisar Datos Inválidos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calendar: Consultar Disponibilidad": {
+      "main": [
+        [
+          {
+            "node": "Evaluar Disponibilidad",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram: Confirmar Turno al Paciente": {
+      "main": [
+        [
+          {
+            "node": "Gmail: Confirmar Turno al Paciente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Horario Libre?": {
+      "main": [
+        [
+          {
+            "node": "Preparar Datos Paciente",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Telegram: Horario Ocupado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI: Analizar Solicitud": {
+      "main": [
+        [
+          {
+            "node": "Parsear Respuesta IA",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Preparar Error IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Error IA": {
+      "main": [
+        [
+          {
+            "node": "Airtable: Registrar Error IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable: Registrar Error IA": {
+      "main": [
+        [
+          {
+            "node": "Parsear Respuesta IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parsear Respuesta IA": {
+      "main": [
+        [
+          {
+            "node": "Preparar Análisis IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail: HITL Aprobación del Médico": {
+      "main": [
+        [
+          {
+            "node": "¿Aprobado por el Médico?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Datos Paciente": {
+      "main": [
+        [
+          {
+            "node": "Airtable: Upsert Paciente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable: Upsert Paciente": {
+      "main": [
+        [
+          {
+            "node": "Preparar Datos Turno",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Datos Turno": {
+      "main": [
+        [
+          {
+            "node": "Airtable: Crear Turno",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable: Crear Turno": {
+      "main": [
+        [
+          {
+            "node": "OpenAI: Analizar Solicitud",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Aprobado por el Médico?": {
+      "main": [
+        [
+          {
+            "node": "Calendar: Crear Turno",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Preparar Rechazo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calendar: Crear Turno": {
+      "main": [
+        [
+          {
+            "node": "Preparar Aprobación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable: Marcar Aprobado por Humano": {
+      "main": [
+        [
+          {
+            "node": "Telegram: Confirmar Turno al Paciente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger - Fallos del Flujo": {
+      "main": [
+        [
+          {
+            "node": "Preparar Error Global",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Error Global": {
+      "main": [
+        [
+          {
+            "node": "Airtable: Log de Error Global",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluar Disponibilidad": {
+      "main": [
+        [
+          {
+            "node": "¿Horario Libre?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Aprobación": {
+      "main": [
+        [
+          {
+            "node": "Airtable: Marcar Aprobado por Humano",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Análisis IA": {
+      "main": [
+        [
+          {
+            "node": "Airtable: Guardar Análisis IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable: Guardar Análisis IA": {
+      "main": [
+        [
+          {
+            "node": "Gmail: HITL Aprobación del Médico",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Rechazo": {
+      "main": [
+        [
+          {
+            "node": "Airtable: Marcar Rechazado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable: Marcar Rechazado": {
+      "main": [
+        [
+          {
+            "node": "Telegram: Turno Rechazado al Paciente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail: Confirmar Turno al Paciente": {
+      "main": [
+        [
+          {
+            "node": "Airtable: Guardar Thread ID Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "55cb9e09-7488-4aa1-a15f-f9a5cd02badf",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e186966a984d2b6fc3e6ee87e3e16e535791e508535dd94cc574087c005c0bab"
+  },
+  "nodeGroups": [],
+  "id": "IolqrdIJp2Eu8QYI",
+  "tags": []
+}
