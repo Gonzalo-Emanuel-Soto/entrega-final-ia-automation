@@ -1,6 +1,7 @@
 Entrega final – AI Automation
+
 1. Resumen de información:
-Repositorio Github: https://github.com/GitRepoFabi/entrega-final-ai-automation
+Repositorio Github: https://github.com/Gonzalo-Emanuel-Soto/entrega-final-ia-automation
 Base de datos Airtable:
 https://airtable.com/appbn42w9qKUO7mks/tblZrNu4tQKceB3Tu/viw2S2HhUVlImo5AC
 Orquestador: N8N
